@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Daily Objectives</title>
+
+<style>
+body {
+font-family: Arial, sans-serif;
+background: #f1f5f9;
+margin: 0;
+padding: 40px 16px;
+color: #1e293b;
+}
+
+.app {
+max-width: 500px;
+margin: auto;
+background: white;
+padding: 28px;
+border-radius: 16px;
+box-shadow: 0 8px 24px #00000010;
+}
+
+h1 {
+margin-top: 0;
+color: #2563eb;
+}
+
+.subtitle {
+color: #64748b;
+}
+
+form {
+display: flex;
+gap: 8px;
+margin: 24px 0;
+}
+
+input {
+flex: 1;
+min-width: 0;
+padding: 12px;
+border: 1px solid #cbd5e1;
+border-radius: 8px;
+font-size: 15px;
+}
+
+button {
+padding: 11px 14px;
+border: none;
+border-radius: 8px;
+background: #2563eb;
+color: white;
+cursor: pointer;
+}
+
+button:hover {
+background: #1d4ed8;
+}
+
+.progress-track {
+height: 10px;
+background: #e2e8f0;
+border-radius: 20px;
+overflow: hidden;
+}
+
+#progress-bar {
+height: 100%;
+width: 0%;
+background: #22c55e;
+transition: width 0.3s;
+}
+
+#task-list {
+list-style: none;
+padding: 0;
+}
+
+.task {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 12px 0;
+border-bottom: 1px solid #e2e8f0;
+}
+
+.task span {
+flex: 1;
+overflow-wrap: anywhere;
+}
+
+.task.done span {
+text-decoration: line-through;
+color: #94a3b8;
+}
+
+.task input {
+flex: none;
+width: 18px;
+height: 18px;
+}
+
+.delete {
+background: #fee2e2;
+color: #b91c1c;
+}
+
+.delete:hover {
+background: #fecaca;
+}
+
+#empty-message {
+color: #64748b;
+text-align: center;
+padding: 20px 0;
+}
+</style>
+</head>
+
+<body>
+<main class="app">
+<h1>My Daily Objectives 🎯</h1>
+<p class="subtitle">Small steps. Real progress.</p>
+
+<form id="task-form">
+<input
+id="task-input"
+type="text"
+placeholder="What do you want to achieve?"
+aria-label="New task"
+required
+>
+<button type="submit">Add</button>
+</form>
+
+<h3 id="progress-text">0 of 0 objectives completed</h3>
+
+<div
+class="progress-track"
+role="progressbar"
+aria-label="Task completion"
+aria-valuemin="0"
+aria-valuemax="100"
+aria-valuenow="0"
+>
+<div id="progress-bar"></div>
+</div>
+
+<ul id="task-list"></ul>
+<button id="clear-completed" type="button">Clear Completed</button>
+<p id="empty-message">Your objectives will appear here.</p>
+</main>
+
+<script>
+const form = document.getElementById("task-form");
+const input = document.getElementById("task-input");
+const taskList = document.getElementById("task-list");
+const progressText = document.getElementById("progress-text");
+const progressBar = document.getElementById("progress-bar");
+const emptyMessage = document.getElementById("empty-message");
+const progressTrack = document.querySelector(".progress-track");
+const clearCompletedButton = document.getElementById("clear-completed");
+
+let tasks = JSON.parse(localStorage.getItem("dailyTasks")) || [];
+
+form.addEventListener("submit", function(event) {
+event.preventDefault();
+
+const taskName = input.value.trim();
+
+if (taskName === "") {
+return;
+}
+
+tasks.push({
+name: taskName,
+completed: false
+});
+
+input.value = "";
+renderTasks();
+clearCompletedButton.addEventListener("click",function(){tasks = tasks.filter(function(task){return task.completed === false;});renderTasks();});
+});
+
+function renderTasks() {
+taskList.replaceChildren();
+
+tasks.forEach(function(task, index) {
+const item = document.createElement("li");
+item.className = task.completed ? "task done" : "task";
+
+const checkbox = document.createElement("input");
+checkbox.type = "checkbox";
+checkbox.checked = task.completed;
+checkbox.setAttribute(
+"aria-label",
+"Complete " + task.name
+);
+
+checkbox.addEventListener("change", function() {
+tasks[index].completed = checkbox.checked;
+renderTasks();
+});
+
+const name = document.createElement("span");
+name.textContent = task.name;
+
+const deleteButton = document.createElement("button");
+deleteButton.textContent = "Delete";
+deleteButton.className = "delete";
+
+deleteButton.addEventListener("click", function() {
+tasks.splice(index, 1);
+renderTasks();
+});
+
+item.append(checkbox, name, deleteButton);
+taskList.append(item);
+});
+
+const completed = tasks.filter(function(task) {
+return task.completed;
+}).length;
+
+const percentage = tasks.length === 0
+? 0
+: Math.round((completed / tasks.length) * 100);
+
+progressText.textContent =
+completed + " of " + tasks.length +
+" objectives completed";
+
+progressBar.style.width = percentage + "%";
+progressTrack.setAttribute("aria-valuenow", percentage);
+
+emptyMessage.hidden = tasks.length > 0;
+localStorage.setItem("dailyTasks",JSON.stringify(tasks));
+}
+
+renderTasks();
+</script>
+</body>
+</html>
